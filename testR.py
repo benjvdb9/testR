@@ -1,7 +1,6 @@
 import socket
 import sys
-import pdb
-import time
+import select
 
 host= socket.gethostname()
 SERVADR = (host, 6000)
@@ -31,7 +30,15 @@ class Server():
         fin= False
         print('Retreiving data')
         while not fin:
-            data= client.recv(1024)
+            print('Server retreival loop')
+            client.settimeout(3)
+            try:
+                data= client.recv(32)
+            except:
+                data = b''
+                print('Client socket timed out')
+                pass
+            print('Data:', data)
             chunks.append(data)
             fin = data == b''
         print('All data succesfully retreived')
@@ -48,12 +55,8 @@ class Client():
             self.__s.connect(SERVADR)
             print('Connected', SERVADR)
             self._send()
-            #self.__s.close()
-            #self.__s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            #self.__s.connect(SERVADR)
-            print(self.__s.recv(1024).encode())
+            print('Received:', self._rec().decode())
             self.__s.close()
-            #print(self._rec())
         except SyntaxError:
             print('Error')
 
@@ -61,6 +64,7 @@ class Client():
         print('Sending')
         totalsent= 0
         msg = self.__message.encode()
+        print(msg)
         try:
             while totalsent < len(msg):
                 sent= self.__s.send(msg[totalsent:])
@@ -74,7 +78,8 @@ class Client():
         finished= False
         print('Receiving')
         while not finished:
-            data = self.__s.recv(1024)
+            print('loop')
+            data = self.__s.recv(32)
             chunks.append(data)
             finished = data == b''
         print('Message received')
